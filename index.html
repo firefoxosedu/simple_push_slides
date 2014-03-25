@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<!--
+  Google HTML5 slide template
+
+  Authors: Luke Mahé (code)
+           Marcin Wichary (code and design)
+
+           Dominic Mazzoni (browser compatibility)
+           Charles Chen (ChromeVox support)
+
+  URL: http://code.google.com/p/html5slides/
+-->
+
+<html>
+  <head>
+    <title>Firefox OS Push Notifications</title>
+
+    <meta charset='utf-8'>
+    <link rel="stylesheet" type="text/css" href="firasans/stylesheet.css">
+    <link rel="stylesheet" type="text/css" href="style/styles.css">
+    <link rel="stylesheet" type="text/css" href="style/conferencia.css">
+    <script src='js/slides.js'></script>
+  </head>
+
+  <style>
+    /* Your individual styles here, or just use inline styles if that’s
+       what you want. */
+
+
+  </style>
+
+  <body style='display: none'>
+
+    <section class='slides layout-regular template-default'>
+
+      <!-- Your slides (<article>s) go here. Delete or comment out the
+           slides below. -->
+      <article class='biglogo'>
+      </article>
+
+      <article>
+        <h1>
+          Push Notifications in Firefox OS
+        </h1>
+        <p>
+          <a href="https://github.com/firefoxosedu/simple_push" target="_blank">https://github.com/firefoxosedu/simple_push</a>
+        </p>
+      </article>
+
+      <article>
+        <h1>
+          Partnership
+        </h1>
+        <p>
+          Telefonica <strong id="red-heart">♥</strong> Mozilla Firefox
+        </p>
+      </article>
+
+      <article>
+        <section id="borja" class="profile">
+          <strong>Borja Salguero (@borjasalguero)</strong><br>
+          FirefoxOS Frontend Engineer. Web technologies passionate and Vespa enthusiast.
+        </section>
+        <section id="francisco" class="profile">
+          <strong>Francisco Jordano (@mepartoconmigo)</strong><br>
+          Metal head \m/. FirefoxOS addict. Software handcrafter.
+        </section>
+      </article>
+
+      <article>
+        <h2>
+          A phone keeps you connected to the world!
+        </h2>
+        <br/><br/>
+        <p>
+          <img class="centered" style="height:500px" src="style/images/firefox_notifications.png"></img>
+        </p>
+      </article>
+
+      <article>
+        <h1>
+          Simple Push API
+        </h1>
+        <p>
+          Available on the phones since version 1.1
+        </p>
+        <p>
+          In the process of being standarised
+        </p>
+        <p>
+          <a href="https://dvcs.w3.org/hg/push/raw-file/tip/index.html">https://dvcs.w3.org/hg/push/raw-file/tip/index.html</a>
+        </p>
+      </article>
+
+      <article>
+        <h3>
+          How does this work?
+        </h3>
+        <p>
+          <img src="/style/images/pns_example.png"></img>
+        </p>
+      </article>
+
+      <article class="fill current">
+        <h3>
+          Why looks that complicated?
+        </h3>
+        <p>
+          <img src="style/images/privacy.jpg"></img>
+        </p>
+      </article>
+
+
+      <article>
+        <h1>
+          It's not that complicated ;)
+        </h1>
+        <p>
+          Let's take a deep look and demistify the Simple Push API.
+        </p>
+      </article>
+
+      <article class="fill current">
+        <h2>
+          Before we start, we need to ask for permissions.
+        </h2>
+        <br/><br/><br/>
+        <p>
+          As many Firefox OS APIs, you'll need to ask for the permissions to receive push notifications.
+        </p>
+        <pre>
+"permissions": {
+  "push": {}
+},
+"messages": {
+  "push": "/index.html"
+}</pre>
+        <p>
+          We control which document will handle the notification.
+        </p>
+      </article>
+
+      <article>
+        <h1 style="margin-top: 100px;">
+          Step 1: Register for receiving a public end point.
+        </h1>
+        <pre>
+if (!navigator.push) {
+  alert('Sorry push not supported');
+  return;
+}
+
+var request = navigator.push.register();
+request.onsuccess = function onSuccess() { ... };
+request.onerror = function onError(e) { ... };</pre>
+        <div class="source black">
+          This code is executed in your Firefox OS app
+        </div>
+      </article>
+
+      <article>
+        <h1 style="margin-top: 100px;">
+          What did we get?
+        </h1>
+        <pre>
+request.onsuccess = function onSuccess() {
+  var endPoint = request.result;
+  // ... now we have a way to be notified
+}</pre>
+        <p>
+          <ul>
+            <li>The endpoint is unique</li>
+            <li>Refers to a url of the push notification server</li>
+            <li>We can ask for as many end point (channels) as needed per application</li>
+          </ul>
+        </p>
+        <div class="source black">
+          This code is executed in your Firefox OS app
+        </div>
+      </article>
+
+      <article>
+        <h1 style="margin-top: 100px;">
+          Step 2: Share your public end point with your server side app
+        </h1>
+        <p style="margin-top:50px">
+          Use any mechanism, but that end point is the public way of your app being notified.
+        </p>
+        <p>
+          XMLHttpRequest, JSONP, websockets, you choose.
+        </p>
+        <div class="source black">
+          This code is executed in your Firefox OS app
+        </div>
+      </article>
+
+      <article>
+        <h1 style="margin-top: 100px;">
+          Step 3: Your server side notifies there is something new
+        </h1>
+        <p>
+        When something on our application logic needs to notify the user for any reason, we can do that with the following action
+        </p>
+        <pre>
+curl -X PUT --data 'version=&lt;version_number&gt;' '&lt;end point we got&gt;'</pre>
+        <div class="source black">
+          This code, or action, is executed in your server side
+        </div>
+      </article>
+
+      <article>
+        <h1 style="margin-top: 100px;">
+          Step 4: Receiving the notification in our App.
+        </h1>
+        <pre>
+window.navigator.setMessageHandler('push',
+  function onPushNotification(evt) {
+  var endpoint = evt.pushEndpoint;
+  var version = evt.version;
+
+  //.... do your magic ....
+});</pre>
+        <div class="source black">
+          This code, or action, is executed in your Firefox OS app
+        </div>
+      </article>
+
+      <article>
+        <h2>Some utility library</h2>
+        <pre>
+// Listen to a new notification channel,
+// register a callback for an action
+// when we get the notification.
+window.PushHelper.listen('notifications', null,
+ function onNotifiaction() {
+  alert('We got a notification');
+});
+
+// Tell your server the channels to communicate
+// with this phone.
+window.PushHelper.register(function saveMyChannels(channels) {
+  // Your logic to send the data goes here
+});
+
+// Start listening to push messages.
+window.PushHelper.init();
+        </pre>
+        <div class="source black">
+          <a href="https://github.com/arcturus/ffos-pushhelper">https://github.com/arcturus/ffos-pushhelper</a>
+        </div>
+      </article>
+
+      <article class='biglogo2'>
+      </article>
+
+    </section>
+
+  </body>
+</html>
